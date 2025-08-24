@@ -2,49 +2,40 @@ import { useEffect, useState } from "react";
 
 function App() {
   const [apiMessage, setApiMessage] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api")
       .then((res) => res.json())
-      .then((data) => {
-        setApiMessage(data.message);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to fetch API");
-        setLoading(false);
-      });
+      .then((data) => setApiMessage(data.message))
+      .catch(() => setApiMessage("Error connecting to backend"));
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-between">
       {/* Header */}
-      <header className="bg-blue-600 text-white py-4 shadow-md text-center text-2xl font-bold">
-        My DevOps Project
+      <header className="bg-blue-600 w-full text-white py-4 shadow-md">
+        <h1 className="text-3xl font-extrabold text-center">My DevOps Project</h1>
       </header>
 
-      {/* Hero Section */}
-      <section className="flex-1 flex flex-col items-center justify-center text-center px-4">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">Welcome!</h1>
-        <p className="text-gray-600 text-lg mb-6">
-          This is a fully automated CI/CD deployed React + Node.js app on AWS.
-        </p>
-
-        {loading && <p className="text-blue-600 font-medium">Loading API...</p>}
-        {error && <p className="text-red-600 font-medium">{error}</p>}
-        {!loading && !error && (
-          <div className="p-4 bg-white rounded-xl shadow-md max-w-sm">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">API Status</h2>
-            <p className="text-green-600 font-medium">{apiMessage}</p>
-          </div>
-        )}
-      </section>
+      {/* Main Section */}
+      <main className="flex flex-col items-center justify-center flex-1 px-6">
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-md w-full">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">API Status</h2>
+          <p
+            className={`text-lg font-medium ${
+              apiMessage.includes("working")
+                ? "text-green-600"
+                : "text-red-600"
+            }`}
+          >
+            {apiMessage}
+          </p>
+        </div>
+      </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-2 text-center">
-        © {new Date().getFullYear()} My DevOps Project
+      <footer className="bg-gray-800 text-white py-3 text-center w-full">
+        &copy; {new Date().getFullYear()} My DevOps Project. All rights reserved.
       </footer>
     </div>
   );
