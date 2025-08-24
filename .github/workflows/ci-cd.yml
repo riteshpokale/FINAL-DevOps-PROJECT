@@ -10,21 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout code
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Step 2: Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # Step 3: Build and push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
+          context: ./backend            # Folder containing the Dockerfile
+          file: ./backend/Dockerfile    # Explicit Dockerfile path
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/nodejs-app:latest
 
+      # Step 4: Deploy to EC2
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
