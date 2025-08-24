@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Full CI/CD Pipeline (Backend + Frontend)
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout code
+      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -21,24 +21,67 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 3: Build and push Docker image
-      - name: Build and push Docker image
+      # Step 3: Build and push backend Docker image
+      - name: Build and push backend Docker image
         uses: docker/build-push-action@v3
         with:
-          context: ./backend            # Folder containing the Dockerfile
-          file: ./backend/Dockerfile    # Explicit Dockerfile path
+          context: ./backend
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/nodejs-app:latest
 
-      # Step 4: Deploy to EC2
-      - name: Deploy to EC2
+      # Step 4: Build frontend (React)
+      - name: Setup Node.js for frontend
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      # Step 5: Deploy backend container & frontend build files to EC2 + reload Nginx
+      - name: Deploy to EC2 (Backend + Frontend + Nginx reload)
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.EC2_PUBLIC_IP }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            echo "Deploying backend container..."
             docker pull ${{ secrets.DOCKER_USERNAME }}/nodejs-app:latest
             docker stop node-app || true
             docker rm node-app || true
             docker run -d --name node-app -p 8080:8080 --restart always ${{ secrets.DOCKER_USERNAME }}/nodejs-app:latest
+
+            echo "Deploying frontend build files..."
+            sudo rm -rf /usr/share/nginx/html/*
+            # Create a temporary folder for upload
+            mkdir -p ~/frontend-build
+
+      # Step 6: Upload frontend build files (from GitHub runner to EC2)
+      - name: Upload frontend build files to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "frontend/dist/*"
+          target: "~/frontend-build"
+
+      # Step 7: Move files into nginx root and reload
+      - name: Finalize frontend deployment & reload Nginx
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo cp -r ~/frontend-build/* /usr/share/nginx/html/
+            sudo rm -rf ~/frontend-build
+            sudo nginx -t
+            sudo systemctl reload nginx
+            echo "Deployment complete!"
