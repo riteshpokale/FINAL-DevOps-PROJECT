@@ -1,44 +1,15 @@
-import { useEffect, useState } from "react";
+import React from "react";
+import ReactDOM from "react-dom/client";
 
-function App() {
-  const [apiMessage, setApiMessage] = useState("");
-
-  useEffect(() => {
-    fetch("/api")
-      .then((res) => res.json())
-      .then((data) => setApiMessage(data.message))
-      .catch(() => setApiMessage("Error connecting to backend"));
-  }, []);
-
+const App = () => {
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-between">
-      {/* Header */}
-      <header className="bg-blue-600 w-full text-white py-4 shadow-md">
-        <h1 className="text-3xl font-extrabold text-center">My DevOps Project</h1>
-      </header>
-
-      {/* Main Section */}
-      <main className="flex flex-col items-center justify-center flex-1 px-6">
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-md w-full">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">API Status</h2>
-          <p
-            className={`text-lg font-medium ${
-              apiMessage.includes("working")
-                ? "text-green-600"
-                : "text-red-600"
-            }`}
-          >
-            {apiMessage}
-          </p>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white py-3 text-center w-full">
-        &copy; {new Date().getFullYear()} My DevOps Project. All rights reserved.
-      </footer>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <h1 className="text-4xl font-bold text-blue-600 mb-4">Hello, React on EC2!</h1>
+      <p className="text-lg text-gray-700">
+        Your frontend is running successfully with Vite + React + TailwindCSS.
+      </p>
     </div>
   );
-}
+};
 
-export default App;
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
