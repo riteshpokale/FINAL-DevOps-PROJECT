@@ -1,34 +1,31 @@
 # Stage 1: Build frontend
-FROM node:18 AS frontend-build
+FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend
 
 # Copy frontend package files and install deps
 COPY frontend/package*.json ./
-RUN npm install --strict-peer-deps || exit 1   # Fail if install fails
+RUN npm install --legacy-peer-deps   # avoids strict peer issues
 
 # Copy frontend source
 COPY frontend/ ./
 
 # Build frontend
-RUN npm run build || exit 1                   # Fail if build fails
+RUN npm run build
 
-# Stage 2: Backend + Nginx frontend
-FROM node:18
+# Stage 2: Backend + Nginx
+FROM node:20-alpine
 
 # Install Nginx
-RUN apt-get update && apt-get install -y nginx && apt-get clean
+RUN apk add --no-cache nginx bash
 
 # Backend
 WORKDIR /app/backend
 COPY backend/package*.json ./
-RUN npm install --strict-peer-deps || exit 1   # Fail if install fails
+RUN npm install --legacy-peer-deps
 COPY backend/ ./
 
 # Copy frontend build
 COPY --from=frontend-build /app/frontend/dist /usr/share/nginx/html
-
-# Expose ports
-EXPOSE 8080 80
 
 # Nginx config
 RUN echo "server { \
@@ -48,5 +45,8 @@ RUN echo "server { \
     } \
 }" > /etc/nginx/conf.d/default.conf
 
-# Start both backend and Nginx
+# Expose ports
+EXPOSE 8080 80
+
+# Start backend and Nginx together
 CMD bash -c "nginx && node /app/backend/index.js"
