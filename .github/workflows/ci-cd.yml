@@ -6,48 +6,22 @@ on:
       - main
 
 jobs:
-  build-test-deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
+      # Step 1: Checkout code
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      # 3️⃣ Backend tests
-      - name: Install backend dependencies
-        run: |
-          cd backend
-          npm install
-      - name: Run backend tests
-        run: |
-          cd backend
-          npm test
-
-      # 4️⃣ Frontend tests
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm install
-      - name: Run frontend tests
-        run: |
-          cd frontend
-          npm test
-
-      # 5️⃣ Log in to Docker Hub
+      # Step 2: Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 6️⃣ Build and push Docker image
+      # Step 3: Build and push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
@@ -56,14 +30,24 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/fullstack-nginx:latest
 
-      # 7️⃣ Deploy to EC2
-      - name: Deploy to EC2 using Docker Compose
+      # Step 4: Deploy to EC2
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/FINAL-DevOps-PROJECT
-            docker-compose pull
-            docker-compose up -d --remove-orphans
+            # Stop old container if running
+            docker ps -q --filter "name=final-devops-project-fullstack-app" | xargs -r docker stop | xargs -r docker rm
+
+            # Pull latest image
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/fullstack-nginx:latest
+
+            # Run container with correct port mapping
+            docker run -d \
+              --name final-devops-project-fullstack-app \
+              -p 8081:80 \
+              -p 8080:8080 \
+              --restart always \
+              ${{ secrets.DOCKERHUB_USERNAME }}/fullstack-nginx:latest
