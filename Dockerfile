@@ -1,33 +1,42 @@
+# -----------------------------
 # Stage 1: Build frontend
+# -----------------------------
 FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend
 
-# Copy frontend package files and install deps
+# Copy frontend package.json and package-lock.json
 COPY frontend/package*.json ./
-RUN npm install --legacy-peer-deps   # avoids strict peer issues
 
-# Copy frontend source
+# Install all dependencies (including devDependencies)
+RUN npm install
+
+# Copy frontend source code
 COPY frontend/ ./
+
+# Ensure NODE_ENV is development for build
+ENV NODE_ENV=development
 
 # Build frontend
 RUN npm run build
 
+# -----------------------------
 # Stage 2: Backend + Nginx
+# -----------------------------
 FROM node:20-alpine
 
-# Install Nginx
+# Install Nginx and bash
 RUN apk add --no-cache nginx bash
 
-# Backend
+# Backend setup
 WORKDIR /app/backend
 COPY backend/package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm install
 COPY backend/ ./
 
 # Copy frontend build
 COPY --from=frontend-build /app/frontend/dist /usr/share/nginx/html
 
-# Nginx config
+# Nginx configuration
 RUN echo "server { \
     listen 80; \
     root /usr/share/nginx/html; \
@@ -48,5 +57,5 @@ RUN echo "server { \
 # Expose ports
 EXPOSE 8080 80
 
-# Start backend and Nginx together
+# Start backend and Nginx
 CMD bash -c "nginx && node /app/backend/index.js"
