@@ -1,10 +1,16 @@
 # Stage 1: Build frontend
 FROM node:18 AS frontend-build
 WORKDIR /app/frontend
+
+# Copy frontend package files and install deps
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm install --strict-peer-deps || exit 1   # Fail if install fails
+
+# Copy frontend source
 COPY frontend/ ./
-RUN npm run build
+
+# Build frontend
+RUN npm run build || exit 1                   # Fail if build fails
 
 # Stage 2: Backend + Nginx frontend
 FROM node:18
@@ -15,10 +21,10 @@ RUN yum install -y nginx && yum clean all
 # Backend
 WORKDIR /app/backend
 COPY backend/package*.json ./
-RUN npm install
+RUN npm install --strict-peer-deps || exit 1   # Fail if install fails
 COPY backend/ ./
 
-# Copy frontend build to Nginx
+# Copy frontend build
 COPY --from=frontend-build /app/frontend/dist /usr/share/nginx/html
 
 # Expose ports
