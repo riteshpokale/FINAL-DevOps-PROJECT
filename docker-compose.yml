@@ -5,6 +5,7 @@ services:
     build: .
     image: riteshpokale/fullstack-nginx:latest
     ports:
-      - "80:80"       # Frontend
-      - "8080:8080"   # Backend
+      - "8081:80"       # Frontend container port 80 mapped to host 8081
+      - "8080:8080"     # Backend container port 8080 mapped to host 8080
     restart: always
+
