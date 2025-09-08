@@ -4,16 +4,16 @@
 FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend
 
-# Copy frontend package.json and package-lock.json
+# Copy package.json + package-lock.json
 COPY frontend/package*.json ./
 
-# Install all dependencies (including devDependencies)
-RUN npm install
+# Install all dependencies including devDependencies
+RUN npm install --include=dev
 
-# Copy frontend source code
+# Copy frontend source
 COPY frontend/ ./
 
-# Ensure NODE_ENV is development for build
+# Use development mode for build
 ENV NODE_ENV=development
 
 # Build frontend
@@ -33,7 +33,7 @@ COPY backend/package*.json ./
 RUN npm install
 COPY backend/ ./
 
-# Copy frontend build
+# Copy frontend build output
 COPY --from=frontend-build /app/frontend/dist /usr/share/nginx/html
 
 # Nginx configuration
@@ -57,5 +57,5 @@ RUN echo "server { \
 # Expose ports
 EXPOSE 8080 80
 
-# Start backend and Nginx
-CMD bash -c "nginx && node /app/backend/index.js"
+# Start backend and Nginx together
+CMD ["bash", "-c", "nginx && node /app/backend/index.js"]
