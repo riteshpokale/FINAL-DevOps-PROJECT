@@ -1,18 +1,10 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  backend:
-    build: ./backend
-    container_name: backend
+  fullstack-app:
+    build: .
+    image: your-dockerhub-username/fullstack-nginx:latest
     ports:
-      - "8080:8080"
-    env_file:
-      - .env
-
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
+      - "80:80"       # Frontend
+      - "8080:8080"   # Backend
+    restart: always
