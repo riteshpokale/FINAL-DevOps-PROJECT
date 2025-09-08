@@ -38,16 +38,17 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Stop old container if running
-            docker ps -q --filter "name=final-devops-project-fullstack-app" | xargs -r docker stop | xargs -r docker rm
+            # Stop and remove old container if exists
+            docker stop final-devops-project-fullstack-app || true
+            docker rm final-devops-project-fullstack-app || true
 
             # Pull latest image
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/fullstack-nginx:latest
 
-            # Run container with correct port mapping
+            # Run container with correct ports
             docker run -d \
               --name final-devops-project-fullstack-app \
               -p 8081:80 \
-              -p 8080:8080 \
+              -p 9090:8080 \
               --restart always \
               ${{ secrets.DOCKERHUB_USERNAME }}/fullstack-nginx:latest
