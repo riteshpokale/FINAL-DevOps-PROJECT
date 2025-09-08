@@ -16,7 +16,7 @@ RUN npm run build || exit 1                   # Fail if build fails
 FROM node:18
 
 # Install Nginx
-RUN yum install -y nginx && yum clean all
+RUN apt-get update && apt-get install -y nginx && apt-get clean
 
 # Backend
 WORKDIR /app/backend
